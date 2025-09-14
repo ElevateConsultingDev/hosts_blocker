@@ -26,7 +26,7 @@ The StevenBlack hosts repository provides these 4 extension categories:
 
 1. **Clone this repository**:
    ```bash
-   git clone https://github.com/yourusername/hosts_blocker.git
+   git clone https://github.com/ElevateConsultingDev/hosts_blocker.git
    cd hosts_blocker
    ```
 
@@ -65,8 +65,9 @@ If you prefer to set up manually:
 
 ### Checking Status
 ```bash
-launchctl list | grep com.user.hosts-blocker
+launchctl list | grep hosts-blocker
 ```
+**Note**: The service name includes your username (e.g., `com.john.hosts-blocker`) to ensure it works for any macOS user.
 
 ### Manual Update
 ```bash
@@ -81,12 +82,12 @@ tail -f logs/update-hosts.err
 
 ### Stopping the Service
 ```bash
-launchctl unload ~/Library/LaunchAgents/com.user.hosts-blocker.plist
+launchctl unload ~/Library/LaunchAgents/com.$(whoami).hosts-blocker.plist
 ```
 
 ### Starting the Service
 ```bash
-launchctl load ~/Library/LaunchAgents/com.user.hosts-blocker.plist
+launchctl load ~/Library/LaunchAgents/com.$(whoami).hosts-blocker.plist
 ```
 
 ## Uninstalling
@@ -179,10 +180,18 @@ hosts_blocker/
 
 ## Requirements
 
-- macOS (uses launchd for scheduling)
-- curl (for downloading hosts files)
-- sudo privileges (for modifying /etc/hosts)
-- Internet connection (for downloading updates)
+- **macOS 10.10+** (uses launchd for scheduling)
+- **curl** (included with macOS)
+- **sudo privileges** (for modifying /etc/hosts)
+- **Internet connection** (for downloading updates)
+- **Git** (for cloning the repository)
+
+### macOS Compatibility
+This tool is designed to work on any modern macOS system. It automatically:
+- Detects the current username for unique service naming
+- Uses the system's built-in `launchd` for scheduling
+- Leverages macOS's native DNS cache flushing commands
+- Creates user-specific launch agents (no system-wide installation required)
 
 ## Security Notes
 

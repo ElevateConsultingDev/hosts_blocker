@@ -14,8 +14,9 @@ NC='\033[0m' # No Color
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PLIST_NAME="com.user.hosts-blocker"
-PLIST_FILE="$HOME/Library/LaunchAgents/$PLIST_NAME.plist"
+CURRENT_USER=$(whoami)
+PLIST_LABEL="com.${CURRENT_USER}.hosts-blocker"
+PLIST_FILE="$HOME/Library/LaunchAgents/$PLIST_LABEL.plist"
 
 # Function to print colored output
 print_status() {
@@ -130,7 +131,7 @@ show_final_status() {
     print_status "Uninstall completed!"
     echo
     echo "What was removed:"
-    echo "  - Launch agent: $PLIST_NAME"
+    echo "  - Launch agent: $PLIST_LABEL"
     echo "  - Plist file: $PLIST_FILE"
     echo "  - Configuration file: $SCRIPT_DIR/hosts-config.txt"
     echo

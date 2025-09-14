@@ -18,6 +18,10 @@ PLIST_NAME="com.user.hosts-blocker"
 PLIST_FILE="$HOME/Library/LaunchAgents/$PLIST_NAME.plist"
 CONFIG_FILE="$SCRIPT_DIR/hosts-config.txt"
 
+# Get current username for plist label
+CURRENT_USER=$(whoami)
+PLIST_LABEL="com.${CURRENT_USER}.hosts-blocker"
+
 # Available categories from StevenBlack hosts
 declare -A CATEGORIES=(
     ["porn"]="Pornography and adult content"
@@ -142,7 +146,7 @@ create_plist() {
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>$PLIST_NAME</string>
+  <string>$PLIST_LABEL</string>
 
   <key>ProgramArguments</key>
   <array>
@@ -218,7 +222,7 @@ show_status() {
     echo "  - Plist file: $PLIST_FILE"
     echo
     echo "Management commands:"
-    echo "  - Check status: launchctl list | grep $PLIST_NAME"
+    echo "  - Check status: launchctl list | grep $PLIST_LABEL"
     echo "  - Unload: launchctl unload $PLIST_FILE"
     echo "  - Reload: launchctl unload $PLIST_FILE && launchctl load $PLIST_FILE"
     echo "  - Manual update: sudo $SCRIPT_DIR/update-hosts.sh"
