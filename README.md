@@ -74,6 +74,21 @@ launchctl list | grep hosts-blocker
 sudo ./update-hosts.sh
 ```
 
+### Check if a Site is Blocked
+```bash
+# Check a specific website
+./check-site.sh facebook.com
+
+# Verbose check with DNS testing
+./check-site.sh -v twitter.com
+
+# Show current configuration
+./check-site.sh --config
+
+# List all blocked domains (first 50)
+./check-site.sh --list
+```
+
 ### Viewing Logs
 ```bash
 tail -f logs/update-hosts.log
@@ -88,6 +103,43 @@ launchctl unload ~/Library/LaunchAgents/com.$(whoami).hosts-blocker.plist
 ### Starting the Service
 ```bash
 launchctl load ~/Library/LaunchAgents/com.$(whoami).hosts-blocker.plist
+```
+
+## Site Checker Utility
+
+The included `check-site.sh` utility helps you verify which websites are blocked and troubleshoot issues:
+
+### Basic Usage
+```bash
+# Check if a site is blocked
+./check-site.sh example.com
+
+# Verbose output with DNS testing
+./check-site.sh -v example.com
+```
+
+### Advanced Options
+```bash
+# Show current configuration
+./check-site.sh --config
+
+# List all blocked domains (first 50)
+./check-site.sh --list
+
+# Show help
+./check-site.sh --help
+```
+
+### Example Output
+```bash
+$ ./check-site.sh facebook.com
+================================
+  Hosts Blocker Site Checker
+================================
+
+[BLOCKED] Domain 'facebook.com' is BLOCKED
+
+Summary: facebook.com will be BLOCKED
 ```
 
 ## Uninstalling
@@ -169,6 +221,7 @@ hosts_blocker/
 ├── setup-hosts-blocker.sh      # Installation script
 ├── uninstall-hosts-blocker.sh  # Uninstallation script
 ├── update-hosts.sh             # Main update script
+├── check-site.sh               # Site checker utility
 ├── com.user.update-hosts.plist # Launch agent template
 ├── hosts-config.txt            # Configuration (created during setup)
 └── logs/                       # Log files directory
