@@ -13,14 +13,14 @@ An automated system for blocking unwanted websites using the `/etc/hosts` file o
 
 ## Available Blocking Categories
 
+The StevenBlack hosts repository provides these 4 extension categories:
+
 - **porn**: Pornography and adult content
 - **social**: Social media platforms (Facebook, Twitter, Instagram, etc.)
 - **gambling**: Gambling and betting sites
 - **fakenews**: Fake news and misinformation sites
-- **malware**: Malware and phishing sites
-- **ads**: Advertising and tracking domains
-- **drugs**: Drug-related content
-- **violence**: Violence and gore content
+
+**Note**: The base hosts file already includes malware and ad blocking by default. Additional categories like drugs and violence are not available as extensions in the StevenBlack repository.
 
 ## Quick Start
 

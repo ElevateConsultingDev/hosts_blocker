@@ -24,10 +24,6 @@ declare -A CATEGORIES=(
     ["social"]="Social media platforms"
     ["gambling"]="Gambling and betting sites"
     ["fakenews"]="Fake news and misinformation"
-    ["malware"]="Malware and phishing sites"
-    ["ads"]="Advertising and tracking"
-    ["drugs"]="Drug-related content"
-    ["violence"]="Violence and gore"
 )
 
 # Function to print colored output
@@ -96,7 +92,7 @@ get_category_selection() {
     
     if [ -z "$selected_categories" ]; then
         selected_categories=""
-        print_status "Using default categories (malware and ads)"
+        print_status "Using base hosts file (includes malware and ads by default)"
     else
         # Validate categories
         for category in $selected_categories; do
