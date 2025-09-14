@@ -144,7 +144,8 @@ Summary: facebook.com will be BLOCKED
 
 ## Uninstalling
 
-To completely remove the hosts blocker:
+### Quick Uninstall
+To remove the hosts blocker but keep script files:
 
 ```bash
 ./uninstall-hosts-blocker.sh
@@ -155,6 +156,22 @@ This will:
 - Remove the launch agent
 - Optionally restore your original hosts file
 - Clean up configuration files
+
+### Complete Removal
+To completely remove everything and restore your system:
+
+```bash
+sudo ./remove-hosts-blocker.sh
+```
+
+This will:
+- Stop and remove the launch agent
+- Restore the original hosts file from backup
+- Clean up all configuration and log files
+- Optionally remove all script files
+- Flush DNS cache
+
+**Warning**: This action cannot be undone!
 
 ## Configuration
 
@@ -219,7 +236,8 @@ sudo killall -HUP mDNSResponder
 hosts_blocker/
 ├── README.md                    # This file
 ├── setup-hosts-blocker.sh      # Installation script
-├── uninstall-hosts-blocker.sh  # Uninstallation script
+├── uninstall-hosts-blocker.sh  # Quick uninstall script
+├── remove-hosts-blocker.sh     # Complete removal script
 ├── update-hosts.sh             # Main update script
 ├── check-site.sh               # Site checker utility
 ├── com.user.update-hosts.plist # Launch agent template
