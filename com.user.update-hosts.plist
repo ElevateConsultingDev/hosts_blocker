@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+ "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.user.update-hosts</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/dave/scripts/update-hosts.sh</string>
+  </array>
+
+  <!-- Run every 7 days = 604800 seconds -->
+  <key>StartInterval</key>
+  <integer>604800</integer>
+
+  <!-- Logs -->
+  <key>StandardOutPath</key>
+  <string>/tmp/update-hosts.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/tmp/update-hosts.err</string>
+</dict>
+</plist>
