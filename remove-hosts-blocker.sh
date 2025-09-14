@@ -69,13 +69,16 @@ get_removal_choice() {
         read -p "Enter your choice (1-3): " choice
         case $choice in
             1)
-                return "quick"
+                echo "quick"
+                return 0
                 ;;
             2)
-                return "complete"
+                echo "complete"
+                return 0
                 ;;
             3)
-                return "cancel"
+                echo "cancel"
+                return 0
                 ;;
             *)
                 print_error "Invalid choice. Please enter 1, 2, or 3."
