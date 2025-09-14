@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Hosts Blocker Removal Script
-# Completely removes the hosts blocker and restores original hosts file
+# Offers both quick uninstall and complete removal options
 
 set -e
 
@@ -10,6 +10,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Configuration
@@ -40,10 +41,53 @@ print_header() {
     echo
 }
 
-# Function to check if running as root
+# Function to show removal options
+show_removal_options() {
+    echo "Choose removal type:"
+    echo
+    echo -e "${CYAN}1) Quick Uninstall${NC}"
+    echo "   - Stop the service and remove configuration"
+    echo "   - Keep all script files for future use"
+    echo "   - Easy to re-enable later"
+    echo "   - No sudo required"
+    echo
+    echo -e "${CYAN}2) Complete Removal${NC}"
+    echo "   - Stop the service and remove everything"
+    echo "   - Restore original hosts file"
+    echo "   - Remove all script files and repository"
+    echo "   - Requires sudo"
+    echo "   - Cannot be undone"
+    echo
+    echo -e "${CYAN}3) Cancel${NC}"
+    echo "   - Exit without making changes"
+    echo
+}
+
+# Function to get user choice
+get_removal_choice() {
+    while true; do
+        read -p "Enter your choice (1-3): " choice
+        case $choice in
+            1)
+                return "quick"
+                ;;
+            2)
+                return "complete"
+                ;;
+            3)
+                return "cancel"
+                ;;
+            *)
+                print_error "Invalid choice. Please enter 1, 2, or 3."
+                ;;
+        esac
+    done
+}
+
+# Function to check if running as root (for complete removal)
 check_root() {
     if [ "$EUID" -ne 0 ]; then
-        print_error "This script must be run as root (use sudo)"
+        print_error "Complete removal requires root privileges (use sudo)"
         print_error "Run: sudo ./remove-hosts-blocker.sh"
         exit 1
     fi
@@ -136,7 +180,7 @@ cleanup_logs() {
     fi
 }
 
-# Function to clean up script files
+# Function to clean up script files (complete removal only)
 cleanup_scripts() {
     print_status "Cleaning up script files..."
     
@@ -144,7 +188,6 @@ cleanup_scripts() {
     echo "This will remove:"
     echo "  - setup-hosts-blocker.sh"
     echo "  - update-hosts.sh"
-    echo "  - uninstall-hosts-blocker.sh"
     echo "  - check-site.sh"
     echo "  - com.user.update-hosts.plist"
     echo "  - README.md"
@@ -156,7 +199,6 @@ cleanup_scripts() {
         # Remove script files
         rm -f "$SCRIPT_DIR/setup-hosts-blocker.sh"
         rm -f "$SCRIPT_DIR/update-hosts.sh"
-        rm -f "$SCRIPT_DIR/uninstall-hosts-blocker.sh"
         rm -f "$SCRIPT_DIR/check-site.sh"
         rm -f "$SCRIPT_DIR/com.user.update-hosts.plist"
         rm -f "$SCRIPT_DIR/README.md"
@@ -181,6 +223,8 @@ cleanup_scripts() {
 
 # Function to show final status
 show_final_status() {
+    local removal_type="$1"
+    
     echo
     print_status "Removal completed!"
     echo
@@ -190,38 +234,83 @@ show_final_status() {
     echo "  - Configuration file: $CONFIG_FILE"
     echo "  - Log files: $LOGS_DIR"
     echo
-    echo "What was restored:"
-    echo "  - Original hosts file (if backup was found and restored)"
-    echo "  - DNS cache flushed"
+    
+    if [ "$removal_type" = "quick" ]; then
+        echo "What was kept:"
+        echo "  - All script files (setup, update, check-site, etc.)"
+        echo "  - This removal script"
+        echo "  - README.md documentation"
+        echo
+        print_status "You can re-enable the hosts blocker by running: ./setup-hosts-blocker.sh"
+    else
+        echo "What was restored:"
+        echo "  - Original hosts file (if backup was found and restored)"
+        echo "  - DNS cache flushed"
+        echo
+        print_warning "Note: If no backup was found, you may need to manually restore your hosts file"
+        print_warning "The original hosts file typically contains only localhost entries"
+    fi
+    
     echo
-    print_warning "Note: If no backup was found, you may need to manually restore your hosts file"
-    print_warning "The original hosts file typically contains only localhost entries"
-    echo
-    print_status "Your system should now be back to its original state"
+    print_status "Your system is now clean"
 }
 
 # Function to show help
 show_help() {
     echo "Usage: $0 [OPTIONS]"
     echo
-    echo "Completely remove the hosts blocker and restore original hosts file."
+    echo "Remove the hosts blocker with interactive options."
     echo
     echo "Options:"
     echo "  -h, --help     Show this help message"
-    echo "  -f, --force    Skip confirmation prompts (use with caution)"
+    echo "  -q, --quick    Skip menu and do quick uninstall"
+    echo "  -c, --complete Skip menu and do complete removal"
     echo
-    echo "This script will:"
-    echo "  - Stop and remove the launch agent"
-    echo "  - Restore the original hosts file from backup"
-    echo "  - Clean up configuration and log files"
-    echo "  - Optionally remove all script files"
+    echo "Removal Types:"
+    echo "  Quick Uninstall:"
+    echo "    - Stop service and remove configuration"
+    echo "    - Keep script files for future use"
+    echo "    - No sudo required"
     echo
-    echo "Run with sudo: sudo ./remove-hosts-blocker.sh"
+    echo "  Complete Removal:"
+    echo "    - Stop service and remove everything"
+    echo "    - Restore original hosts file"
+    echo "    - Remove all files and repository"
+    echo "    - Requires sudo"
+    echo
+}
+
+# Function to perform quick uninstall
+do_quick_uninstall() {
+    print_status "Performing quick uninstall..."
+    echo
+    
+    remove_launch_agent
+    cleanup_config
+    cleanup_logs
+    show_final_status "quick"
+}
+
+# Function to perform complete removal
+do_complete_removal() {
+    print_status "Performing complete removal..."
+    echo
+    
+    # Check if running as root
+    check_root
+    
+    remove_launch_agent
+    restore_hosts_file
+    cleanup_config
+    cleanup_logs
+    cleanup_scripts
+    show_final_status "complete"
 }
 
 # Main function
 main() {
-    local force_mode="false"
+    local skip_menu="false"
+    local removal_type=""
     
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -230,8 +319,14 @@ main() {
                 show_help
                 exit 0
                 ;;
-            -f|--force)
-                force_mode="true"
+            -q|--quick)
+                skip_menu="true"
+                removal_type="quick"
+                shift
+                ;;
+            -c|--complete)
+                skip_menu="true"
+                removal_type="complete"
                 shift
                 ;;
             -*)
@@ -249,11 +344,20 @@ main() {
     
     print_header
     
-    # Check if running as root
-    check_root
+    # If menu is not skipped, show options
+    if [ "$skip_menu" != "true" ]; then
+        show_removal_options
+        removal_type=$(get_removal_choice)
+    fi
+    
+    # Handle cancellation
+    if [ "$removal_type" = "cancel" ]; then
+        print_status "Removal cancelled"
+        exit 0
+    fi
     
     # Confirm removal
-    if [ "$force_mode" != "true" ]; then
+    if [ "$removal_type" = "complete" ]; then
         print_warning "This will completely remove the hosts blocker and restore your original hosts file."
         print_warning "This action cannot be undone!"
         echo
@@ -266,13 +370,12 @@ main() {
         fi
     fi
     
-    # Perform removal steps
-    remove_launch_agent
-    restore_hosts_file
-    cleanup_config
-    cleanup_logs
-    cleanup_scripts
-    show_final_status
+    # Perform the chosen removal
+    if [ "$removal_type" = "quick" ]; then
+        do_quick_uninstall
+    elif [ "$removal_type" = "complete" ]; then
+        do_complete_removal
+    fi
 }
 
 # Run main function

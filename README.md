@@ -144,34 +144,45 @@ Summary: facebook.com will be BLOCKED
 
 ## Uninstalling
 
-### Quick Uninstall
-To remove the hosts blocker but keep script files:
+The removal script offers two options:
 
+### Interactive Removal
 ```bash
-./uninstall-hosts-blocker.sh
+./remove-hosts-blocker.sh
 ```
 
-This will:
-- Stop the automated service
-- Remove the launch agent
-- Optionally restore your original hosts file
-- Clean up configuration files
+This will show you a menu to choose between:
+- **Quick Uninstall**: Stop service, keep script files (easy to re-enable)
+- **Complete Removal**: Remove everything and restore original system
 
-### Complete Removal
-To completely remove everything and restore your system:
-
+### Command Line Options
 ```bash
-sudo ./remove-hosts-blocker.sh
+# Quick uninstall (no sudo required)
+./remove-hosts-blocker.sh --quick
+
+# Complete removal (requires sudo)
+sudo ./remove-hosts-blocker.sh --complete
+
+# Show help
+./remove-hosts-blocker.sh --help
 ```
 
-This will:
-- Stop and remove the launch agent
-- Restore the original hosts file from backup
-- Clean up all configuration and log files
-- Optionally remove all script files
-- Flush DNS cache
+### What Each Option Does
 
-**Warning**: This action cannot be undone!
+**Quick Uninstall:**
+- ✅ Stop the automated service
+- ✅ Remove the launch agent
+- ✅ Clean up configuration files
+- ✅ Keep all script files for future use
+- ✅ Easy to re-enable later
+
+**Complete Removal:**
+- ✅ Stop and remove the launch agent
+- ✅ Restore the original hosts file from backup
+- ✅ Clean up all configuration and log files
+- ✅ Optionally remove all script files
+- ✅ Flush DNS cache
+- ⚠️ **Cannot be undone**
 
 ## Configuration
 
@@ -236,8 +247,7 @@ sudo killall -HUP mDNSResponder
 hosts_blocker/
 ├── README.md                    # This file
 ├── setup-hosts-blocker.sh      # Installation script
-├── uninstall-hosts-blocker.sh  # Quick uninstall script
-├── remove-hosts-blocker.sh     # Complete removal script
+├── remove-hosts-blocker.sh     # Unified removal script
 ├── update-hosts.sh             # Main update script
 ├── check-site.sh               # Site checker utility
 ├── com.user.update-hosts.plist # Launch agent template
