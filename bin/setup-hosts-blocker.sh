@@ -14,13 +14,14 @@ NC='\033[0m' # No Color
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 CURRENT_USER=$(whoami)
 PLIST_LABEL="com.${CURRENT_USER}.hosts-blocker"
 
 # Choose between LaunchAgent (user) or LaunchDaemon (system)
 # LaunchDaemon is more reliable for system-wide services
 PLIST_FILE="/Library/LaunchDaemons/$PLIST_LABEL.plist"
-CONFIG_FILE="$SCRIPT_DIR/hosts-config.txt"
+CONFIG_FILE="$PROJECT_ROOT/hosts-config.txt"
 
 # Available categories from StevenBlack hosts
 # Using arrays instead of associative arrays for better compatibility
@@ -93,10 +94,6 @@ show_categories() {
 
 # Function to detect and select browser
 detect_browser() {
-    echo "Browser Detection and Selection"
-    echo "==============================="
-    echo
-    
     # Detect available browsers
     local available_browsers=()
     local browser_paths=()
@@ -128,39 +125,40 @@ detect_browser() {
     fi
     
     if [ ${#available_browsers[@]} -eq 0 ]; then
-        print_warning "No supported browsers detected"
-        echo "Supported browsers: Chrome, Vivaldi, Firefox, Safari, Edge"
-        echo "You can still proceed without history checking."
-        echo
         return 1
     fi
     
-    echo "Detected browsers:"
+    # Auto-select the first browser if only one is found
+    if [ ${#available_browsers[@]} -eq 1 ]; then
+        local selected_browser="${available_browsers[0]}"
+        local selected_path="${browser_paths[0]}"
+        echo "$selected_browser|$selected_path"
+        return 0
+    fi
+    
+    # If multiple browsers, show selection
+    echo "Multiple browsers detected:"
     for i in "${!available_browsers[@]}"; do
         echo "  $((i+1)). ${available_browsers[$i]}"
     done
     echo "  $(( ${#available_browsers[@]} + 1 )). Skip history checking"
     echo
     
-    while true; do
-        read -p "Select browser for history checking (1-$(( ${#available_browsers[@]} + 1 ))): " -r choice
-        
-        if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le $(( ${#available_browsers[@]} + 1 )) ]; then
-            if [ "$choice" -eq $(( ${#available_browsers[@]} + 1 )) ]; then
-                print_info "Skipping history checking"
-                return 1
-            else
-                local selected_browser="${available_browsers[$((choice-1))]}"
-                local selected_path="${browser_paths[$((choice-1))]}"
-                
-                print_status "Selected browser: $selected_browser"
-                echo "$selected_browser|$selected_path"
-                return 0
-            fi
+    # Use a simple selection without infinite loop
+    read -p "Select browser (1-$(( ${#available_browsers[@]} + 1 ))): " -r choice
+    
+    if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le $(( ${#available_browsers[@]} + 1 )) ]; then
+        if [ "$choice" -eq $(( ${#available_browsers[@]} + 1 )) ]; then
+            return 1
         else
-            print_error "Invalid choice. Please enter a number between 1 and $(( ${#available_browsers[@]} + 1 ))"
+            local selected_browser="${available_browsers[$((choice-1))]}"
+            local selected_path="${browser_paths[$((choice-1))]}"
+            echo "$selected_browser|$selected_path"
+            return 0
         fi
-    done
+    else
+        return 1
+    fi
 }
 
 # Function to get user's category selection
@@ -176,10 +174,11 @@ get_category_selection() {
     print_status "Checking browser history for potential conflicts..."
     echo "========================================================"
     
-    # Try to detect browser, but don't hang if it fails
+    # Try to detect browser with timeout
     local browser_info=""
     if command -v sqlite3 >/dev/null 2>&1; then
-        browser_info=$(detect_browser 2>/dev/null || echo "")
+        # Use timeout to prevent hanging
+        browser_info=$(timeout 10 detect_browser 2>/dev/null || echo "")
     fi
     
     if [ -n "$browser_info" ]; then
@@ -188,13 +187,13 @@ get_category_selection() {
         
         print_status "Found $browser_name browser, checking history..."
         
-        # Run history check with specific browser
+        # Run history check with specific browser and timeout
         if [ -f "$SCRIPT_DIR/simple-history-check.sh" ]; then
-            BROWSER_PATH="$browser_path" "$SCRIPT_DIR/simple-history-check.sh" 2>/dev/null || true
+            timeout 30 BROWSER_PATH="$browser_path" "$SCRIPT_DIR/simple-history-check.sh" 2>/dev/null || true
         fi
     else
         print_status "No browser detected or history check unavailable"
-        print_status "You can run the history check later with: ./simple-history-check.sh"
+        print_status "You can run the history check later with: ./bin/simple-history-check.sh"
     fi
     echo
     echo "Now select your categories:"
@@ -285,8 +284,8 @@ add_exceptions_interactive() {
     echo
     
     # Initialize whitelist file
-    if [ ! -f "$SCRIPT_DIR/whitelist.txt" ]; then
-        cat > "$SCRIPT_DIR/whitelist.txt" << EOF
+    if [ ! -f "$PROJECT_ROOT/whitelist.txt" ]; then
+        cat > "$PROJECT_ROOT/whitelist.txt" << EOF
 # Hosts Blocker Whitelist
 # Add domains here that should be allowed even if they're in blocked categories
 # One domain per line, without http:// or https://
@@ -349,8 +348,8 @@ EOF
         domain=$(echo "$domain" | sed 's|^https\?://||' | sed 's|^www\.||' | sed 's|/$||')
         
         # Add to whitelist
-        if ! grep -q "^$domain$" "$SCRIPT_DIR/whitelist.txt" 2>/dev/null; then
-            echo "$domain" >> "$SCRIPT_DIR/whitelist.txt"
+        if ! grep -q "^$domain$" "$PROJECT_ROOT/whitelist.txt" 2>/dev/null; then
+            echo "$domain" >> "$PROJECT_ROOT/whitelist.txt"
             print_status "Added '$domain' to whitelist"
         else
             print_warning "Domain '$domain' is already whitelisted"
@@ -358,11 +357,11 @@ EOF
     done
     
     # Show final whitelist
-    local whitelist_count=$(grep -v '^#' "$SCRIPT_DIR/whitelist.txt" | grep -v '^$' | wc -l)
+    local whitelist_count=$(grep -v '^#' "$PROJECT_ROOT/whitelist.txt" | grep -v '^$' | wc -l)
     if [ "$whitelist_count" -gt 0 ]; then
         echo
         print_status "Whitelist summary:"
-        grep -v '^#' "$SCRIPT_DIR/whitelist.txt" | grep -v '^$' | while read -r domain; do
+        grep -v '^#' "$PROJECT_ROOT/whitelist.txt" | grep -v '^$' | while read -r domain; do
             echo "  - $domain"
         done
         print_status "Total whitelisted domains: $whitelist_count"
@@ -423,10 +422,10 @@ create_plist() {
 
   <!-- Logs -->
   <key>StandardOutPath</key>
-  <string>$SCRIPT_DIR/logs/launchd.log</string>
+  <string>$PROJECT_ROOT/logs/launchd.log</string>
 
   <key>StandardErrorPath</key>
-  <string>$SCRIPT_DIR/logs/launchd.err</string>
+  <string>$PROJECT_ROOT/logs/launchd.err</string>
 </dict>
 </plist>
 EOF
@@ -477,7 +476,7 @@ show_status() {
     echo "Configuration:"
     echo "  - Categories: ${selected_categories:-'default (malware + ads)'}"
     echo "  - Update interval: 7 days"
-    echo "  - Logs directory: $SCRIPT_DIR/logs"
+    echo "  - Logs directory: $PROJECT_ROOT/logs"
     echo "  - Plist file: $PLIST_FILE"
     echo
     echo "Management commands:"
