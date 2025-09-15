@@ -442,6 +442,33 @@ main() {
     # Get category selection
     local selected_categories=$(get_category_selection)
     
+    # Check what would be blocked with these categories
+    if [ -n "$selected_categories" ] && [ -f "$SCRIPT_DIR/simple-history-check.sh" ]; then
+        echo
+        print_status "Checking what would be blocked with your selection..."
+        echo "========================================"
+        
+        # Run the history check and capture output
+        local history_output=$(mktemp)
+        "$SCRIPT_DIR/simple-history-check.sh" "$selected_categories" > "$history_output" 2>&1
+        
+        # Show the analysis
+        if [ -s "$history_output" ]; then
+            cat "$history_output"
+        fi
+        rm "$history_output"
+        
+        # Ask if user wants to add exceptions
+        echo
+        print_warning "⚠️  Some of your frequently visited sites would be blocked!"
+        echo
+        read -p "Would you like to add any sites to the whitelist now? (y/n): " -r add_exceptions
+        
+        if [ "$add_exceptions" = "y" ] || [ "$add_exceptions" = "Y" ]; then
+            add_exceptions_interactive "$selected_categories"
+        fi
+    fi
+    
     create_config "$selected_categories"
     create_plist
     load_launch_agent
