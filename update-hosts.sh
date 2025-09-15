@@ -44,9 +44,10 @@ source "$CONFIG_FILE"
 # Build URL based on selected categories
 BASE_URL="https://raw.githubusercontent.com/StevenBlack/hosts/master"
 if [ -n "$SELECTED_CATEGORIES" ]; then
-    # Convert categories to URL format (e.g., "porn social" -> "porn/social")
-    CATEGORY_PATH=$(echo "$SELECTED_CATEGORIES" | tr ' ' '/')
-    HOSTS_URL="$BASE_URL/alternates/$CATEGORY_PATH/hosts"
+    # Convert categories to StevenBlack format (hyphenated, alphabetical order)
+    # StevenBlack uses specific combinations like "fakenews-gambling-porn-social"
+    SORTED_CATEGORIES=$(echo "$SELECTED_CATEGORIES" | tr ' ' '\n' | sort | tr '\n' '-' | sed 's/-$//')
+    HOSTS_URL="$BASE_URL/alternates/$SORTED_CATEGORIES/hosts"
 else
     # Default to base hosts file
     HOSTS_URL="$BASE_URL/hosts"
