@@ -172,6 +172,59 @@ See `docs/manual-test.md` for detailed manual testing procedures.
 - Automatic backups are created before any changes
 - DNS cache is flushed after updates for immediate effect
 
+## 🧠 Smart Whitelist Management
+
+The hosts blocker includes an intelligent whitelist system that automatically discovers and whitelists all necessary subdomains and CDN domains for any site you want to allow.
+
+### Smart Whitelist Features
+
+- **Automatic Discovery**: Analyzes websites to find all related domains (CDN, static content, API endpoints)
+- **Comprehensive Coverage**: Whitelists subdomains, CDN domains, and static content domains
+- **One-Command Setup**: Add a domain and all its dependencies with a single command
+- **Safe Operation**: Creates backups before making changes
+
+### Usage
+
+```bash
+# Add a domain with smart discovery
+./bin/smart-whitelist.sh add linkedin.com
+
+# Discover related domains without adding (dry run)
+./bin/smart-whitelist.sh discover github.com
+
+# Apply whitelist to hosts file
+./bin/smart-whitelist.sh apply
+
+# List all whitelisted domains
+./bin/smart-whitelist.sh list
+
+# Simple wrapper for quick adding
+./bin/whitelist-add.sh facebook.com
+```
+
+### Examples
+
+```bash
+# Add LinkedIn (discovers static.licdn.com, media.licdn.com, etc.)
+./bin/smart-whitelist.sh add linkedin.com
+
+# Add GitHub (discovers api.github.com, assets.github.com, etc.)
+./bin/smart-whitelist.sh add github.com
+
+# Add Facebook (discovers cdn.facebook.com, static.facebook.com, etc.)
+./bin/smart-whitelist.sh add facebook.com
+```
+
+### How It Works
+
+1. **Domain Analysis**: Fetches the website content to analyze its structure
+2. **Pattern Recognition**: Identifies common CDN patterns (static, media, cdn, assets, etc.)
+3. **Content Extraction**: Extracts domains from HTML, CSS, and JavaScript references
+4. **Validation**: Validates that discovered domains are actually related to the target domain
+5. **Whitelist Application**: Adds all discovered domains to the whitelist and removes them from the hosts file
+
+This eliminates the need for manual domain discovery and ensures complete website functionality.
+
 ## 🚨 Troubleshooting
 
 ### Common Issues

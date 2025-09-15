@@ -1,4 +1,3 @@
-linkedin.com
 static.licdn.com
 media.licdn.com
 www.linkedin.com
@@ -14,3 +13,17 @@ static-ecst.licdn.com
 static-od.licdn.com
 www.licdn.com
 snap.licdn.com
+stackoverflow.com
+api.stackoverflow.com
+app.stackoverflow.com
+assets.stackoverflow.com
+cdn.stackoverflow.com
+css.stackoverflow.com
+images.stackoverflow.com
+img.stackoverflow.com
+js.stackoverflow.com
+m.stackoverflow.com
+media.stackoverflow.com
+mobile.stackoverflow.com
+static.stackoverflow.com
+www.stackoverflow.com
