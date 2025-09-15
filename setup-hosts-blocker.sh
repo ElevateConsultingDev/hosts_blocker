@@ -14,13 +14,13 @@ NC='\033[0m' # No Color
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PLIST_NAME="com.user.hosts-blocker"
-PLIST_FILE="$HOME/Library/LaunchAgents/$PLIST_NAME.plist"
-CONFIG_FILE="$SCRIPT_DIR/hosts-config.txt"
-
-# Get current username for plist label
 CURRENT_USER=$(whoami)
 PLIST_LABEL="com.${CURRENT_USER}.hosts-blocker"
+
+# Choose between LaunchAgent (user) or LaunchDaemon (system)
+# LaunchDaemon is more reliable for system-wide services
+PLIST_FILE="/Library/LaunchDaemons/$PLIST_LABEL.plist"
+CONFIG_FILE="$SCRIPT_DIR/hosts-config.txt"
 
 # Available categories from StevenBlack hosts
 declare -A CATEGORIES=(
@@ -136,10 +136,10 @@ EOF
 create_plist() {
     print_status "Creating launchd plist file..."
     
-    # Create LaunchAgents directory if it doesn't exist
-    mkdir -p "$HOME/Library/LaunchAgents"
+    # Create LaunchDaemons directory if it doesn't exist
+    sudo mkdir -p "/Library/LaunchDaemons"
     
-    cat > "$PLIST_FILE" << EOF
+    sudo tee "$PLIST_FILE" > /dev/null << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -175,20 +175,20 @@ EOF
     print_status "Plist file created: $PLIST_FILE"
 }
 
-# Function to load the launch agent
+# Function to load the launch daemon
 load_launch_agent() {
-    print_status "Loading launch agent..."
+    print_status "Loading launch daemon..."
     
     # Unload if already loaded
-    launchctl unload "$PLIST_FILE" 2>/dev/null || true
+    launchctl bootout system "$PLIST_FILE" 2>/dev/null || true
     
     # Load the new plist
-    launchctl load "$PLIST_FILE"
+    launchctl bootstrap system "$PLIST_FILE"
     
     if [ $? -eq 0 ]; then
-        print_status "Launch agent loaded successfully"
+        print_status "Launch daemon loaded successfully"
     else
-        print_error "Failed to load launch agent"
+        print_error "Failed to load launch daemon"
         exit 1
     fi
 }
@@ -223,8 +223,8 @@ show_status() {
     echo
     echo "Management commands:"
     echo "  - Check status: launchctl list | grep $PLIST_LABEL"
-    echo "  - Unload: launchctl unload $PLIST_FILE"
-    echo "  - Reload: launchctl unload $PLIST_FILE && launchctl load $PLIST_FILE"
+    echo "  - Unload: sudo launchctl bootout system $PLIST_FILE"
+    echo "  - Reload: sudo launchctl bootout system $PLIST_FILE && sudo launchctl bootstrap system $PLIST_FILE"
     echo "  - Manual update: sudo $SCRIPT_DIR/update-hosts.sh"
     echo
     print_status "The hosts blocker will start automatically and update every 7 days."

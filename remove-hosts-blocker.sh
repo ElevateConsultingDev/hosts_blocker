@@ -96,11 +96,15 @@ check_root() {
     fi
 }
 
-# Function to stop and remove launch agent
+# Function to stop and remove launch agent/daemon
 remove_launch_agent() {
-    print_status "Stopping and removing launch agent..."
+    print_status "Stopping and removing launch service..."
     
+    local found_service="false"
+    
+    # Check for user LaunchAgent
     if [ -f "$PLIST_FILE" ]; then
+        print_status "Found user LaunchAgent: $PLIST_FILE"
         # Unload the agent
         launchctl unload "$PLIST_FILE" 2>/dev/null || true
         print_status "Launch agent unloaded"
@@ -108,8 +112,38 @@ remove_launch_agent() {
         # Remove the plist file
         rm "$PLIST_FILE"
         print_status "Plist file removed: $PLIST_FILE"
-    else
-        print_warning "Plist file not found: $PLIST_FILE"
+        found_service="true"
+    fi
+    
+    # Check for system LaunchDaemon (common patterns)
+    local system_plist="/Library/LaunchDaemons/com.user.update-hosts.plist"
+    local system_plist_alt="/Library/LaunchDaemons/com.${CURRENT_USER}.hosts-blocker.plist"
+    
+    for plist in "$system_plist" "$system_plist_alt"; do
+        if [ -f "$plist" ]; then
+            print_status "Found system LaunchDaemon: $plist"
+            # Use bootout for system daemons
+            launchctl bootout system "$plist" 2>/dev/null || true
+            print_status "Launch daemon unloaded"
+            
+            # Remove the plist file (requires sudo)
+            if [ "$EUID" -eq 0 ]; then
+                rm "$plist"
+                print_status "Plist file removed: $plist"
+            else
+                print_warning "Cannot remove system plist file without sudo: $plist"
+                print_warning "Please run: sudo rm $plist"
+            fi
+            found_service="true"
+        fi
+    done
+    
+    if [ "$found_service" = "false" ]; then
+        print_warning "No hosts blocker service found"
+        print_warning "Checked locations:"
+        print_warning "  - $PLIST_FILE"
+        print_warning "  - $system_plist"
+        print_warning "  - $system_plist_alt"
     fi
 }
 
