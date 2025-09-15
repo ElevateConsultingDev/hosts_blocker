@@ -267,6 +267,31 @@ hosts_blocker/
 - **Internet connection** (for downloading updates)
 - **Git** (for cloning the repository)
 
+## Sudo Requirements
+
+Not all scripts require sudo privileges. Here's a breakdown:
+
+### Scripts that REQUIRE sudo:
+- **`setup-hosts-blocker.sh`** - Creates system LaunchDaemon and modifies system files
+- **`update-hosts.sh`** - Modifies `/etc/hosts` file (system file)
+- **`remove-hosts-blocker.sh --complete`** - Removes system files and restores `/etc/hosts`
+
+### Scripts that DON'T need sudo:
+- **`remove-hosts-blocker.sh --quick`** - Only stops services and removes user files
+- **`check-site.sh`** - Just reads and analyzes files (may need sudo if `/etc/hosts` has restricted permissions)
+
+### Quick Reference:
+```bash
+# REQUIRES sudo:
+sudo ./setup-hosts-blocker.sh
+sudo ./update-hosts.sh
+sudo ./remove-hosts-blocker.sh --complete
+
+# NO sudo needed:
+./remove-hosts-blocker.sh --quick
+./check-site.sh
+```
+
 ### macOS Compatibility
 This tool is designed to work on any modern macOS system. It automatically:
 - Detects the current username for unique service naming
