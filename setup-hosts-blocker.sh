@@ -82,9 +82,12 @@ show_categories() {
     echo
     echo "Available blocking categories:"
     echo "=============================="
-    for i in "${!CATEGORY_KEYS[@]}"; do
-        echo "  ${CATEGORY_KEYS[$i]} - ${CATEGORY_DESCRIPTIONS[$i]}"
-    done
+    echo "  p - Pornography and adult content"
+    echo "  s - Social media platforms"
+    echo "  g - Gambling and betting sites"
+    echo "  f - Fake news and misinformation"
+    echo "  a - All categories (p + s + g + f)"
+    echo "  d - Default (malware and ads only)"
     echo
 }
 
@@ -162,80 +165,108 @@ detect_browser() {
 
 # Function to get user's category selection
 get_category_selection() {
-    echo "Select categories to block (separate multiple with spaces):"
-    echo "Example: porn social gambling"
-    echo "Leave empty for default (malware and ads only)"
+    echo "Select categories to block (enter letters, e.g., 'psg' for porn+social+gambling):"
+    echo "Example: psg (porn + social + gambling)"
+    echo "         a (all categories)"
+    echo "         d (default - malware and ads only)"
     echo
     
     # Detect browser and check history for potential conflicts
-    local browser_info=$(detect_browser)
+    echo
+    print_status "Checking browser history for potential conflicts..."
+    echo "========================================================"
+    
+    # Try to detect browser, but don't hang if it fails
+    local browser_info=""
+    if command -v sqlite3 >/dev/null 2>&1; then
+        browser_info=$(detect_browser 2>/dev/null || echo "")
+    fi
+    
     if [ -n "$browser_info" ]; then
         local browser_name=$(echo "$browser_info" | cut -d'|' -f1)
         local browser_path=$(echo "$browser_info" | cut -d'|' -f2)
         
-        echo
-        print_info "Checking $browser_name history for potential conflicts..."
-        echo "========================================================"
+        print_status "Found $browser_name browser, checking history..."
         
         # Run history check with specific browser
         if [ -f "$SCRIPT_DIR/simple-history-check.sh" ]; then
             BROWSER_PATH="$browser_path" "$SCRIPT_DIR/simple-history-check.sh" 2>/dev/null || true
         fi
-        echo
-        echo "Now select your categories:"
+    else
+        print_status "No browser detected or history check unavailable"
+        print_status "You can run the history check later with: ./simple-history-check.sh"
     fi
+    echo
+    echo "Now select your categories:"
     
-    read -p "Categories: " -r selected_categories
+    read -p "Categories: " -r choice
     
-    if [ -z "$selected_categories" ]; then
+    # Convert single letters to full category names
+    local selected_categories=""
+    
+    if [ -z "$choice" ] || [ "$choice" = "d" ]; then
         selected_categories=""
         print_status "Using base hosts file (includes malware and ads by default)"
+    elif [ "$choice" = "a" ]; then
+        selected_categories="porn social gambling fakenews"
+        print_status "Selected all categories: $selected_categories"
     else
-        # Validate categories
-        for category in $selected_categories; do
-            valid_category=false
-            for key in "${CATEGORY_KEYS[@]}"; do
-                if [ "$category" = "$key" ]; then
-                    valid_category=true
-                    break
-                fi
-            done
-            if [ "$valid_category" = false ]; then
-                print_error "Invalid category: $category"
-                print_error "Available categories: ${CATEGORY_KEYS[*]}"
-                exit 1
-            fi
+        # Parse individual letters
+        for (( i=0; i<${#choice}; i++ )); do
+            local letter="${choice:$i:1}"
+            case "$letter" in
+                "p")
+                    selected_categories="$selected_categories porn"
+                    ;;
+                "s")
+                    selected_categories="$selected_categories social"
+                    ;;
+                "g")
+                    selected_categories="$selected_categories gambling"
+                    ;;
+                "f")
+                    selected_categories="$selected_categories fakenews"
+                    ;;
+                *)
+                    print_error "Invalid choice: $letter"
+                    print_error "Valid choices: p, s, g, f, a, d"
+                    exit 1
+                    ;;
+            esac
         done
-        print_status "Selected categories: $selected_categories"
         
-        # Check what would be blocked with these categories
-        if [ -f "$SCRIPT_DIR/simple-history-check.sh" ]; then
+        # Remove leading space
+        selected_categories="${selected_categories# }"
+        print_status "Selected categories: $selected_categories"
+    fi
+    
+    # Check what would be blocked with these categories
+    if [ -n "$selected_categories" ] && [ -f "$SCRIPT_DIR/simple-history-check.sh" ]; then
+        echo
+        print_status "Checking what would be blocked with your selection..."
+        
+        # Run the history check and capture output
+        local history_output=$(mktemp)
+        "$SCRIPT_DIR/simple-history-check.sh" "$selected_categories" > "$history_output" 2>&1
+        
+        # Show the analysis
+        cat "$history_output"
+        
+        # Check if there are conflicts
+        if grep -q "would be blocked" "$history_output"; then
             echo
-            print_info "Checking what would be blocked with your selection..."
+            print_warning "⚠️  Some of your frequently visited sites would be blocked!"
+            echo
+            echo "Would you like to add any sites to the whitelist now? (y/n)"
+            read -p "Add exceptions: " -r add_exceptions
             
-            # Run the history check and capture output
-            local history_output=$(mktemp)
-            "$SCRIPT_DIR/simple-history-check.sh" "$selected_categories" > "$history_output" 2>&1
-            
-            # Show the analysis
-            cat "$history_output"
-            
-            # Check if there are conflicts
-            if grep -q "would be blocked" "$history_output"; then
-                echo
-                print_warning "⚠️  Some of your frequently visited sites would be blocked!"
-                echo
-                echo "Would you like to add any sites to the whitelist now? (y/n)"
-                read -p "Add exceptions: " -r add_exceptions
-                
-                if [[ $add_exceptions =~ ^[Yy]$ ]]; then
-                    add_exceptions_interactive "$selected_categories"
-                fi
+            if [[ $add_exceptions =~ ^[Yy]$ ]]; then
+                add_exceptions_interactive "$selected_categories"
             fi
-            
-            rm "$history_output"
-            echo
         fi
+        
+        rm "$history_output"
+        echo
     fi
 }
 
@@ -244,7 +275,7 @@ add_exceptions_interactive() {
     local categories="$1"
     
     echo
-    print_info "Interactive Exception Setup"
+    print_status "Interactive Exception Setup"
     echo "=============================="
     echo
     echo "You can add sites to the whitelist so they won't be blocked."
@@ -334,7 +365,7 @@ EOF
         grep -v '^#' "$SCRIPT_DIR/whitelist.txt" | grep -v '^$' | while read -r domain; do
             echo "  - $domain"
         done
-        print_info "Total whitelisted domains: $whitelist_count"
+        print_status "Total whitelisted domains: $whitelist_count"
     fi
 }
 
