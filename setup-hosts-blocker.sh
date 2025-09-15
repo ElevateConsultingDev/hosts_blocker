@@ -94,6 +94,16 @@ get_category_selection() {
     echo "Example: porn social gambling"
     echo "Leave empty for default (malware and ads only)"
     echo
+    
+    # Check browser history for potential conflicts
+    if [ -f "$SCRIPT_DIR/simple-history-check.sh" ]; then
+        echo "Checking your browser history for potential conflicts..."
+        echo "========================================================"
+        "$SCRIPT_DIR/simple-history-check.sh" 2>/dev/null || true
+        echo
+        echo "Now select your categories:"
+    fi
+    
     read -p "Categories: " -r selected_categories
     
     if [ -z "$selected_categories" ]; then
@@ -116,6 +126,14 @@ get_category_selection() {
             fi
         done
         print_status "Selected categories: $selected_categories"
+        
+        # Check what would be blocked with these categories
+        if [ -f "$SCRIPT_DIR/simple-history-check.sh" ]; then
+            echo
+            print_info "Checking what would be blocked with your selection..."
+            "$SCRIPT_DIR/simple-history-check.sh" "$selected_categories" 2>/dev/null || true
+            echo
+        fi
     fi
 }
 
