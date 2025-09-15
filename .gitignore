@@ -1,21 +1,3 @@
-# Python virtual environment
-.venv/
-venv/
-env/
-
-# Python cache files
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-
-# Logs directory (created during setup)
-logs/
-
-# Configuration file (created during setup)
-hosts-config.txt
-
 # macOS
 .DS_Store
 .DS_Store?
@@ -25,12 +7,71 @@ hosts-config.txt
 ehthumbs.db
 Thumbs.db
 
-# IDE
+# Logs
+*.log
+logs/
+*.log.*
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# Backup files
+*.backup
+*.bak
+*.orig
+
+# Configuration files (user-specific)
+hosts-config.txt
+whitelist.txt
+*.conf.local
+
+# Test results
+test-results.log
+test-output.txt
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Temporary files
-*.tmp
-*.temp
+# System files
+/etc/hosts.backup.*
+/var/log/hosts-blocker.*
+
+# Build artifacts
+build/
+dist/
+*.tar.gz
+*.zip
+
+# Node modules (if any)
+node_modules/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# Pytest
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json

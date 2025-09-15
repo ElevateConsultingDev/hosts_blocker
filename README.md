@@ -1,320 +1,232 @@
 # Hosts Blocker
 
-An automated system for blocking unwanted websites using the `/etc/hosts` file on macOS. This tool uses the [StevenBlack/hosts](https://github.com/StevenBlack/hosts) repository to provide comprehensive blocking of various categories of websites.
+A professional, automated hosts file blocking system for macOS that uses the StevenBlack hosts repository to block unwanted websites and provides easy management tools.
 
-## Features
+## 🚀 Features
 
-- **Automated Updates**: Runs every 7 days to keep your blocklist current
-- **Category Selection**: Choose which types of content to block
-- **Easy Setup**: One-command installation with interactive configuration
-- **Safe Operation**: Creates backups before making changes
-- **Comprehensive Logging**: Track all operations and errors
-- **Easy Management**: Simple commands to start, stop, and uninstall
+- **Automated Setup**: One-command installation with interactive category selection
+- **Multiple Blocking Categories**: Porn, social media, gambling, fake news, and more
+- **Smart Whitelisting**: Add exceptions for sites you need to access
+- **Browser History Integration**: Check what will be blocked before installation
+- **Easy Management**: Simple commands to add/remove sites and update blocks
+- **Professional Testing**: Comprehensive test suite to verify functionality
+- **macOS Optimized**: Uses launchd for reliable background operation
 
-## Available Blocking Categories
-
-The StevenBlack hosts repository provides these 4 extension categories:
-
-- **porn**: Pornography and adult content
-- **social**: Social media platforms (Facebook, Twitter, Instagram, etc.)
-- **gambling**: Gambling and betting sites
-- **fakenews**: Fake news and misinformation sites
-
-**Note**: The base hosts file already includes malware and ad blocking by default. Additional categories like drugs and violence are not available as extensions in the StevenBlack repository.
-
-## Quick Start
-
-1. **Clone this repository**:
-   ```bash
-   git clone https://github.com/ElevateConsultingDev/hosts_blocker.git
-   cd hosts_blocker
-   ```
-
-2. **Run the setup script**:
-   ```bash
-   chmod +x setup-hosts-blocker.sh
-   ./setup-hosts-blocker.sh
-   ```
-
-3. **Follow the interactive prompts** to select which categories to block
-
-That's it! The system will automatically start blocking websites and update every 7 days.
-
-## Manual Installation
-
-If you prefer to set up manually:
-
-1. **Make scripts executable**:
-   ```bash
-   chmod +x update-hosts.sh setup-hosts-blocker.sh uninstall-hosts-blocker.sh
-   ```
-
-2. **Create configuration**:
-   ```bash
-   echo "SELECTED_CATEGORIES=\"porn social gambling\"" > hosts-config.txt
-   ```
-
-3. **Test the update script**:
-   ```bash
-   sudo ./update-hosts.sh
-   ```
-
-4. **Set up launchd** (see the plist template in the repository)
-
-## Usage
-
-### Checking Status
-```bash
-launchctl list | grep hosts-blocker
-```
-**Note**: The service name includes your username (e.g., `com.john.hosts-blocker`) to ensure it works for any macOS user.
-
-### Manual Update
-```bash
-sudo ./update-hosts.sh
-```
-
-### Check if a Site is Blocked
-```bash
-# Check a specific website
-./check-site.sh facebook.com
-
-# Verbose check with DNS testing
-./check-site.sh -v twitter.com
-
-# Show current configuration
-./check-site.sh --config
-
-# List all blocked domains (first 50)
-./check-site.sh --list
-```
-
-### Viewing Logs
-```bash
-tail -f logs/update-hosts.log
-tail -f logs/update-hosts.err
-```
-
-### Stopping the Service
-```bash
-launchctl unload ~/Library/LaunchAgents/com.$(whoami).hosts-blocker.plist
-```
-
-### Starting the Service
-```bash
-launchctl load ~/Library/LaunchAgents/com.$(whoami).hosts-blocker.plist
-```
-
-## Site Checker Utility
-
-The included `check-site.sh` utility helps you verify which websites are blocked and troubleshoot issues:
-
-### Basic Usage
-```bash
-# Check if a site is blocked
-./check-site.sh example.com
-
-# Verbose output with DNS testing
-./check-site.sh -v example.com
-```
-
-### Advanced Options
-```bash
-# Show current configuration
-./check-site.sh --config
-
-# List all blocked domains (first 50)
-./check-site.sh --list
-
-# Show help
-./check-site.sh --help
-```
-
-### Example Output
-```bash
-$ ./check-site.sh facebook.com
-================================
-  Hosts Blocker Site Checker
-================================
-
-[BLOCKED] Domain 'facebook.com' is BLOCKED
-
-Summary: facebook.com will be BLOCKED
-```
-
-## Uninstalling
-
-The removal script offers two options:
-
-### Interactive Removal
-```bash
-./remove-hosts-blocker.sh
-```
-
-This will show you a menu to choose between:
-- **Quick Uninstall**: Stop service, keep script files (easy to re-enable)
-- **Complete Removal**: Remove everything and restore original system
-
-### Command Line Options
-```bash
-# Quick uninstall (no sudo required)
-./remove-hosts-blocker.sh --quick
-
-# Complete removal (requires sudo)
-sudo ./remove-hosts-blocker.sh --complete
-
-# Show help
-./remove-hosts-blocker.sh --help
-```
-
-### What Each Option Does
-
-**Quick Uninstall:**
-- ✅ Stop the automated service
-- ✅ Remove the launch agent
-- ✅ Clean up configuration files
-- ✅ Keep all script files for future use
-- ✅ Easy to re-enable later
-
-**Complete Removal:**
-- ✅ Stop and remove the launch agent
-- ✅ Restore the original hosts file from backup
-- ✅ Clean up all configuration and log files
-- ✅ Optionally remove all script files
-- ✅ Flush DNS cache
-- ⚠️ **Cannot be undone**
-
-## Configuration
-
-The system uses a configuration file (`hosts-config.txt`) to store your preferences:
-
-```bash
-# Selected categories for blocking
-SELECTED_CATEGORIES="porn social gambling"
-
-# Update interval (in seconds)
-# 86400 = 1 day, 604800 = 7 days, 2592000 = 30 days
-UPDATE_INTERVAL=604800
-
-# Log retention (number of days)
-LOG_RETENTION_DAYS=30
-```
-
-## How It Works
-
-1. **Download**: Fetches the latest hosts file from StevenBlack's repository
-2. **Backup**: Creates a timestamped backup of your current `/etc/hosts` file
-3. **Update**: Replaces your hosts file with the new blocklist
-4. **Flush**: Clears the DNS cache to apply changes immediately
-5. **Log**: Records all operations for troubleshooting
-
-## Troubleshooting
-
-### Permission Issues
-If you get permission errors, make sure to run with sudo:
-```bash
-sudo ./update-hosts.sh
-```
-
-### Service Not Running
-Check if the launch agent is loaded:
-```bash
-launchctl list | grep com.user.hosts-blocker
-```
-
-If not loaded, reload it:
-```bash
-launchctl load ~/Library/LaunchAgents/com.user.hosts-blocker.plist
-```
-
-### Websites Still Loading
-After updating the hosts file, try:
-1. Flush DNS cache: `sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder`
-2. Restart your browser
-3. Check if the domain is in the hosts file: `grep "example.com" /etc/hosts`
-
-### Restore Original Hosts File
-If you need to restore your original hosts file:
-```bash
-sudo cp /etc/hosts.backup.YYYYMMDDHHMMSS /etc/hosts
-sudo dscacheutil -flushcache
-sudo killall -HUP mDNSResponder
-```
-
-## File Structure
+## 📁 Project Structure
 
 ```
 hosts_blocker/
-├── README.md                    # This file
-├── setup-hosts-blocker.sh      # Installation script
-├── remove-hosts-blocker.sh     # Unified removal script
-├── update-hosts.sh             # Main update script
-├── check-site.sh               # Site checker utility
-├── com.user.update-hosts.plist # Launch agent template
-├── hosts-config.txt            # Configuration (created during setup)
-└── logs/                       # Log files directory
-    ├── update-hosts.log        # Update operations log
-    ├── update-hosts.err        # Error log
-    ├── launchd.log             # Launch agent output
-    └── launchd.err             # Launch agent errors
+├── bin/                    # Executable scripts
+│   ├── setup-hosts-blocker.sh    # Main installation script
+│   ├── remove-hosts-blocker.sh   # Uninstall script
+│   ├── update-hosts.sh           # Update hosts file
+│   ├── check-site.sh             # Check if site is blocked
+│   ├── whitelist-manager.sh      # Manage whitelist
+│   ├── simple-history-check.sh   # Check browser history
+│   └── history-checker.sh        # Advanced history analysis
+├── tests/                  # Test suite
+│   ├── test-hosts-blocker.sh     # Main test suite
+│   ├── quick-test.sh             # Quick verification
+│   ├── test-interactive-setup.sh # Interactive setup tests
+│   └── simple-test.sh            # Simple functionality tests
+├── docs/                   # Documentation
+│   └── manual-test.md           # Manual testing guide
+├── examples/               # Usage examples
+├── config/                 # Configuration files
+└── README.md              # This file
 ```
 
-## Requirements
+## 🛠 Installation
 
-- **macOS 10.10+** (uses launchd for scheduling)
-- **curl** (included with macOS)
-- **sudo privileges** (for modifying /etc/hosts)
-- **Internet connection** (for downloading updates)
-- **Git** (for cloning the repository)
+### Quick Install
 
-## Sudo Requirements
-
-Not all scripts require sudo privileges. Here's a breakdown:
-
-### Scripts that REQUIRE sudo:
-- **`setup-hosts-blocker.sh`** - Creates system LaunchDaemon and modifies system files
-- **`update-hosts.sh`** - Modifies `/etc/hosts` file (system file)
-- **`remove-hosts-blocker.sh --complete`** - Removes system files and restores `/etc/hosts`
-
-### Scripts that DON'T need sudo:
-- **`remove-hosts-blocker.sh --quick`** - Only stops services and removes user files
-- **`check-site.sh`** - Just reads and analyzes files (may need sudo if `/etc/hosts` has restricted permissions)
-
-### Quick Reference:
 ```bash
-# REQUIRES sudo:
-sudo ./setup-hosts-blocker.sh
-sudo ./update-hosts.sh
-sudo ./remove-hosts-blocker.sh --complete
+# Clone the repository
+git clone https://github.com/ElevateConsultingDev/hosts_blocker.git
+cd hosts_blocker
 
-# NO sudo needed:
-./remove-hosts-blocker.sh --quick
-./check-site.sh
+# Run the setup script
+sudo ./bin/setup-hosts-blocker.sh
 ```
 
-### macOS Compatibility
-This tool is designed to work on any modern macOS system. It automatically:
-- Detects the current username for unique service naming
-- Uses the system's built-in `launchd` for scheduling
-- Leverages macOS's native DNS cache flushing commands
-- Creates user-specific launch agents (no system-wide installation required)
+### Interactive Setup
 
-## Security Notes
+The setup script will guide you through:
 
-- This script modifies your system's hosts file, which affects all network requests
-- Always review what categories you're blocking before installation
-- The script creates backups, but keep your own backup of important hosts file entries
-- Only download from trusted sources (StevenBlack's official repository)
+1. **Category Selection** (single-letter choices):
+   - `p` - Pornography and adult content
+   - `s` - Social media platforms
+   - `g` - Gambling and betting sites
+   - `f` - Fake news and misinformation
+   - `a` - All categories
+   - `d` - Default (malware and ads only)
 
-## Contributing
+2. **Browser History Check**: Automatically detects your browser and shows what will be blocked
 
-Feel free to submit issues and enhancement requests!
+3. **Whitelist Setup**: Add exceptions for sites you need to access
 
-## License
+4. **Service Installation**: Sets up automatic updates via launchd
 
-This project is open source. The hosts files come from the StevenBlack/hosts repository.
+## 📖 Usage
 
-## Acknowledgments
+### Basic Commands
 
-- [StevenBlack/hosts](https://github.com/StevenBlack/hosts) - The comprehensive hosts file repository
-- macOS launchd - For reliable background task scheduling
+```bash
+# Check if a site is blocked
+./bin/check-site.sh facebook.com
+
+# Add a site to whitelist
+sudo ./bin/whitelist-manager.sh add linkedin.com
+
+# Remove a site from whitelist
+sudo ./bin/whitelist-manager.sh remove linkedin.com
+
+# List whitelisted sites
+./bin/whitelist-manager.sh list
+
+# Update hosts file manually
+sudo ./bin/update-hosts.sh
+
+# Check browser history for conflicts
+./bin/simple-history-check.sh
+```
+
+### Management Commands
+
+```bash
+# Uninstall (keeps scripts)
+sudo ./bin/remove-hosts-blocker.sh
+
+# Complete removal (restores system)
+sudo ./bin/remove-hosts-blocker.sh
+
+# Run test suite
+./tests/test-hosts-blocker.sh
+
+# Quick verification
+./tests/quick-test.sh
+```
+
+## 🔧 Configuration
+
+### Categories Available
+
+| Letter | Category | Description |
+|--------|----------|-------------|
+| `p` | Porn | Pornography and adult content |
+| `s` | Social | Social media platforms |
+| `g` | Gambling | Gambling and betting sites |
+| `f` | Fake News | Fake news and misinformation |
+| `a` | All | All categories combined |
+| `d` | Default | Malware and ads only |
+
+### Whitelist Management
+
+The whitelist allows you to access specific sites even if they're in blocked categories:
+
+```bash
+# Add multiple sites
+sudo ./bin/whitelist-manager.sh add linkedin.com github.com
+
+# Remove sites
+sudo ./bin/whitelist-manager.sh remove github.com
+
+# Apply whitelist to hosts file
+sudo ./bin/whitelist-manager.sh apply
+
+# Check whitelist status
+./bin/whitelist-manager.sh check
+```
+
+## 🧪 Testing
+
+### Automated Tests
+
+```bash
+# Run full test suite
+./tests/test-hosts-blocker.sh
+
+# Quick verification
+./tests/quick-test.sh
+
+# Test interactive setup
+./tests/test-interactive-setup.sh
+```
+
+### Manual Testing
+
+See `docs/manual-test.md` for detailed manual testing procedures.
+
+## 📋 Requirements
+
+- **macOS**: 10.12 or later
+- **sudo access**: Required for system file modifications
+- **Internet connection**: For downloading hosts files
+- **curl**: For downloading hosts files
+- **sqlite3**: For browser history analysis (optional)
+
+## 🔒 Security
+
+- All system modifications require sudo authentication
+- Hosts files are downloaded from trusted StevenBlack repository
+- Automatic backups are created before any changes
+- DNS cache is flushed after updates for immediate effect
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+1. **Permission Denied**: Run commands with `sudo`
+2. **Service Not Starting**: Check launchd status with `launchctl list`
+3. **Sites Not Blocked**: Flush DNS cache with `sudo dscacheutil -flushcache`
+4. **Whitelist Not Working**: Ensure whitelist is applied with `sudo ./bin/whitelist-manager.sh apply`
+
+### Debug Commands
+
+```bash
+# Check service status
+sudo launchctl list | grep hosts-blocker
+
+# View logs
+tail -f logs/update-hosts.log
+
+# Check hosts file
+sudo head -20 /etc/hosts
+
+# Test DNS resolution
+nslookup facebook.com
+```
+
+## 📚 Documentation
+
+- [Manual Testing Guide](docs/manual-test.md)
+- [StevenBlack Hosts Repository](https://github.com/StevenBlack/hosts)
+- [macOS launchd Documentation](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html)
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🙏 Acknowledgments
+
+- [StevenBlack](https://github.com/StevenBlack) for the comprehensive hosts file repository
+- macOS community for launchd documentation and best practices
+
+## 📞 Support
+
+For issues and questions:
+- Create an issue on GitHub
+- Check the troubleshooting section above
+- Review the test suite for expected behavior
+
+---
+
+**Note**: This tool modifies system files and requires administrator privileges. Always backup your system before installation.
