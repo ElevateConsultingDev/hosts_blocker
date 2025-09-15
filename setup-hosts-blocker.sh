@@ -88,6 +88,78 @@ show_categories() {
     echo
 }
 
+# Function to detect and select browser
+detect_browser() {
+    echo "Browser Detection and Selection"
+    echo "==============================="
+    echo
+    
+    # Detect available browsers
+    local available_browsers=()
+    local browser_paths=()
+    
+    # Check for common browsers
+    if [ -d "$HOME/Library/Application Support/Google/Chrome" ]; then
+        available_browsers+=("Chrome")
+        browser_paths+=("$HOME/Library/Application Support/Google/Chrome/Default/History")
+    fi
+    
+    if [ -d "$HOME/Library/Application Support/Vivaldi" ]; then
+        available_browsers+=("Vivaldi")
+        browser_paths+=("$HOME/Library/Application Support/Vivaldi/Default/History")
+    fi
+    
+    if [ -d "$HOME/Library/Application Support/Firefox" ]; then
+        available_browsers+=("Firefox")
+        browser_paths+=("$HOME/Library/Application Support/Firefox/Profiles")
+    fi
+    
+    if [ -d "$HOME/Library/Application Support/Safari" ]; then
+        available_browsers+=("Safari")
+        browser_paths+=("$HOME/Library/Application Support/Safari/History.db")
+    fi
+    
+    if [ -d "$HOME/Library/Application Support/Microsoft Edge" ]; then
+        available_browsers+=("Edge")
+        browser_paths+=("$HOME/Library/Application Support/Microsoft Edge/Default/History")
+    fi
+    
+    if [ ${#available_browsers[@]} -eq 0 ]; then
+        print_warning "No supported browsers detected"
+        echo "Supported browsers: Chrome, Vivaldi, Firefox, Safari, Edge"
+        echo "You can still proceed without history checking."
+        echo
+        return 1
+    fi
+    
+    echo "Detected browsers:"
+    for i in "${!available_browsers[@]}"; do
+        echo "  $((i+1)). ${available_browsers[$i]}"
+    done
+    echo "  $(( ${#available_browsers[@]} + 1 )). Skip history checking"
+    echo
+    
+    while true; do
+        read -p "Select browser for history checking (1-$(( ${#available_browsers[@]} + 1 ))): " -r choice
+        
+        if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le $(( ${#available_browsers[@]} + 1 )) ]; then
+            if [ "$choice" -eq $(( ${#available_browsers[@]} + 1 )) ]; then
+                print_info "Skipping history checking"
+                return 1
+            else
+                local selected_browser="${available_browsers[$((choice-1))]}"
+                local selected_path="${browser_paths[$((choice-1))]}"
+                
+                print_status "Selected browser: $selected_browser"
+                echo "$selected_browser|$selected_path"
+                return 0
+            fi
+        else
+            print_error "Invalid choice. Please enter a number between 1 and $(( ${#available_browsers[@]} + 1 ))"
+        fi
+    done
+}
+
 # Function to get user's category selection
 get_category_selection() {
     echo "Select categories to block (separate multiple with spaces):"
@@ -95,11 +167,20 @@ get_category_selection() {
     echo "Leave empty for default (malware and ads only)"
     echo
     
-    # Check browser history for potential conflicts
-    if [ -f "$SCRIPT_DIR/simple-history-check.sh" ]; then
-        echo "Checking your browser history for potential conflicts..."
+    # Detect browser and check history for potential conflicts
+    local browser_info=$(detect_browser)
+    if [ -n "$browser_info" ]; then
+        local browser_name=$(echo "$browser_info" | cut -d'|' -f1)
+        local browser_path=$(echo "$browser_info" | cut -d'|' -f2)
+        
+        echo
+        print_info "Checking $browser_name history for potential conflicts..."
         echo "========================================================"
-        "$SCRIPT_DIR/simple-history-check.sh" 2>/dev/null || true
+        
+        # Run history check with specific browser
+        if [ -f "$SCRIPT_DIR/simple-history-check.sh" ]; then
+            BROWSER_PATH="$browser_path" "$SCRIPT_DIR/simple-history-check.sh" 2>/dev/null || true
+        fi
         echo
         echo "Now select your categories:"
     fi
@@ -131,9 +212,129 @@ get_category_selection() {
         if [ -f "$SCRIPT_DIR/simple-history-check.sh" ]; then
             echo
             print_info "Checking what would be blocked with your selection..."
-            "$SCRIPT_DIR/simple-history-check.sh" "$selected_categories" 2>/dev/null || true
+            
+            # Run the history check and capture output
+            local history_output=$(mktemp)
+            "$SCRIPT_DIR/simple-history-check.sh" "$selected_categories" > "$history_output" 2>&1
+            
+            # Show the analysis
+            cat "$history_output"
+            
+            # Check if there are conflicts
+            if grep -q "would be blocked" "$history_output"; then
+                echo
+                print_warning "⚠️  Some of your frequently visited sites would be blocked!"
+                echo
+                echo "Would you like to add any sites to the whitelist now? (y/n)"
+                read -p "Add exceptions: " -r add_exceptions
+                
+                if [[ $add_exceptions =~ ^[Yy]$ ]]; then
+                    add_exceptions_interactive "$selected_categories"
+                fi
+            fi
+            
+            rm "$history_output"
             echo
         fi
+    fi
+}
+
+# Function to add exceptions interactively
+add_exceptions_interactive() {
+    local categories="$1"
+    
+    echo
+    print_info "Interactive Exception Setup"
+    echo "=============================="
+    echo
+    echo "You can add sites to the whitelist so they won't be blocked."
+    echo "These sites will remain accessible even with the selected categories."
+    echo
+    echo "Press Enter with no input when you're done adding exceptions."
+    echo
+    
+    # Initialize whitelist file
+    if [ ! -f "$SCRIPT_DIR/whitelist.txt" ]; then
+        cat > "$SCRIPT_DIR/whitelist.txt" << EOF
+# Hosts Blocker Whitelist
+# Add domains here that should be allowed even if they're in blocked categories
+# One domain per line, without http:// or https://
+# 
+# Examples:
+# linkedin.com
+# github.com
+# stackoverflow.com
+EOF
+        print_status "Created whitelist file"
+    fi
+    
+    while true; do
+        echo
+        echo "Sites that would be blocked with categories: $categories"
+        echo "--------------------------------------------------------"
+        
+        # Show what would be blocked
+        local temp_hosts=$(mktemp)
+        local base_url="https://raw.githubusercontent.com/StevenBlack/hosts/master"
+        local sorted_categories=$(echo "$categories" | tr ' ' '\n' | sort | tr '\n' '-' | sed 's/-$//')
+        local hosts_url="$base_url/alternates/$sorted_categories/hosts"
+        
+        if curl -s "$hosts_url" -o "$temp_hosts" 2>/dev/null; then
+            # Get top sites from history
+            local temp_sites=$(mktemp)
+            if [ -f "$HOME/Library/Application Support/Google/Chrome/Default/History" ]; then
+                sqlite3 -noheader -separator '|' "$HOME/Library/Application Support/Google/Chrome/Default/History" "
+                SELECT url, title, visit_count 
+                FROM urls 
+                WHERE visit_count > 0 
+                ORDER BY visit_count DESC 
+                LIMIT 20;
+                " > "$temp_sites" 2>/dev/null
+                
+                echo "Top sites that would be blocked:"
+                local count=0
+                while IFS='|' read -r url title visit_count && [ $count -lt 10 ]; do
+                    if [ -n "$url" ] && [ -n "$visit_count" ]; then
+                        local domain=$(echo "$url" | sed -E 's|^https?://||' | sed -E 's|^www\.||' | sed -E 's|/.*$||' | sed -E 's|:.*$||')
+                        if [ -n "$domain" ] && grep -q "0\.0\.0\.0 $domain$" "$temp_hosts" 2>/dev/null; then
+                            count=$((count + 1))
+                            echo "  $count. $domain ($visit_count visits) - $title"
+                        fi
+                    fi
+                done < "$temp_sites"
+                rm "$temp_sites"
+            fi
+        fi
+        rm "$temp_hosts"
+        
+        echo
+        read -p "Enter domain to whitelist (or press Enter to finish): " -r domain
+        
+        if [ -z "$domain" ]; then
+            break
+        fi
+        
+        # Clean domain
+        domain=$(echo "$domain" | sed 's|^https\?://||' | sed 's|^www\.||' | sed 's|/$||')
+        
+        # Add to whitelist
+        if ! grep -q "^$domain$" "$SCRIPT_DIR/whitelist.txt" 2>/dev/null; then
+            echo "$domain" >> "$SCRIPT_DIR/whitelist.txt"
+            print_status "Added '$domain' to whitelist"
+        else
+            print_warning "Domain '$domain' is already whitelisted"
+        fi
+    done
+    
+    # Show final whitelist
+    local whitelist_count=$(grep -v '^#' "$SCRIPT_DIR/whitelist.txt" | grep -v '^$' | wc -l)
+    if [ "$whitelist_count" -gt 0 ]; then
+        echo
+        print_status "Whitelist summary:"
+        grep -v '^#' "$SCRIPT_DIR/whitelist.txt" | grep -v '^$' | while read -r domain; do
+            echo "  - $domain"
+        done
+        print_info "Total whitelisted domains: $whitelist_count"
     fi
 }
 

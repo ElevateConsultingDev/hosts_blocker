@@ -38,16 +38,30 @@ extract_domain() {
     echo "$url" | sed -E 's|^https?://||' | sed -E 's|^www\.||' | sed -E 's|/.*$||' | sed -E 's|:.*$||'
 }
 
-# Function to get top sites from Chrome
-get_chrome_top_sites() {
-    local chrome_history="$HOME/Library/Application Support/Google/Chrome/Default/History"
+# Function to get top sites from browser
+get_browser_top_sites() {
+    local browser_history="${BROWSER_PATH:-$HOME/Library/Application Support/Google/Chrome/Default/History}"
+    local browser_name="Browser"
     
-    if [ ! -f "$chrome_history" ]; then
-        print_warning "Chrome history not found"
+    # Determine browser type from path
+    if echo "$browser_history" | grep -q "Chrome"; then
+        browser_name="Chrome"
+    elif echo "$browser_history" | grep -q "Vivaldi"; then
+        browser_name="Vivaldi"
+    elif echo "$browser_history" | grep -q "Edge"; then
+        browser_name="Edge"
+    elif echo "$browser_history" | grep -q "Safari"; then
+        browser_name="Safari"
+    elif echo "$browser_history" | grep -q "Firefox"; then
+        browser_name="Firefox"
+    fi
+    
+    if [ ! -f "$browser_history" ]; then
+        print_warning "$browser_name history not found at: $browser_history"
         return 1
     fi
     
-    print_info "Extracting top sites from Chrome history..."
+    print_info "Extracting top sites from $browser_name history..."
     
     # Use a temporary file to avoid .sqliterc interference
     local temp_sql=$(mktemp)
@@ -61,14 +75,14 @@ ORDER BY visit_count DESC
 LIMIT 50;
 EOF
     
-    sqlite3 "$chrome_history" < "$temp_sql" > /tmp/chrome_sites.txt
+    sqlite3 "$browser_history" < "$temp_sql" > /tmp/browser_sites.txt
     rm "$temp_sql"
     
-    if [ -s "/tmp/chrome_sites.txt" ]; then
-        print_status "Chrome history extracted"
+    if [ -s "/tmp/browser_sites.txt" ]; then
+        print_status "$browser_name history extracted"
         return 0
     else
-        print_warning "No Chrome history found"
+        print_warning "No $browser_name history found"
         return 1
     fi
 }
@@ -90,7 +104,7 @@ show_top_sites() {
                 echo "$domain|$visit_count|$title" >> "$temp_domains"
             fi
         fi
-    done < "/tmp/chrome_sites.txt"
+    done < "/tmp/browser_sites.txt"
     
     # Aggregate by domain
     awk -F'|' '
@@ -216,8 +230,8 @@ main() {
     echo "========================================"
     echo
     
-    # Get Chrome history
-    if ! get_chrome_top_sites; then
+    # Get browser history
+    if ! get_browser_top_sites; then
         print_error "Could not extract browser history"
         exit 1
     fi
