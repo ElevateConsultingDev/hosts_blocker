@@ -23,11 +23,13 @@ PLIST_FILE="/Library/LaunchDaemons/$PLIST_LABEL.plist"
 CONFIG_FILE="$SCRIPT_DIR/hosts-config.txt"
 
 # Available categories from StevenBlack hosts
-declare -A CATEGORIES=(
-    ["porn"]="Pornography and adult content"
-    ["social"]="Social media platforms"
-    ["gambling"]="Gambling and betting sites"
-    ["fakenews"]="Fake news and misinformation"
+# Using arrays instead of associative arrays for better compatibility
+CATEGORY_KEYS=("porn" "social" "gambling" "fakenews")
+CATEGORY_DESCRIPTIONS=(
+    "Pornography and adult content"
+    "Social media platforms" 
+    "Gambling and betting sites"
+    "Fake news and misinformation"
 )
 
 # Function to print colored output
@@ -80,8 +82,8 @@ show_categories() {
     echo
     echo "Available blocking categories:"
     echo "=============================="
-    for key in "${!CATEGORIES[@]}"; do
-        echo "  $key - ${CATEGORIES[$key]}"
+    for i in "${!CATEGORY_KEYS[@]}"; do
+        echo "  ${CATEGORY_KEYS[$i]} - ${CATEGORY_DESCRIPTIONS[$i]}"
     done
     echo
 }
@@ -100,9 +102,16 @@ get_category_selection() {
     else
         # Validate categories
         for category in $selected_categories; do
-            if [[ ! ${CATEGORIES[$category]+_} ]]; then
+            valid_category=false
+            for key in "${CATEGORY_KEYS[@]}"; do
+                if [ "$category" = "$key" ]; then
+                    valid_category=true
+                    break
+                fi
+            done
+            if [ "$valid_category" = false ]; then
                 print_error "Invalid category: $category"
-                print_error "Available categories: ${!CATEGORIES[*]}"
+                print_error "Available categories: ${CATEGORY_KEYS[*]}"
                 exit 1
             fi
         done
