@@ -189,10 +189,10 @@ load_launch_agent() {
     print_status "Loading launch daemon..."
     
     # Unload if already loaded
-    launchctl bootout system "$PLIST_FILE" 2>/dev/null || true
+    sudo launchctl bootout system "$PLIST_FILE" 2>/dev/null || true
     
     # Load the new plist
-    launchctl bootstrap system "$PLIST_FILE"
+    sudo launchctl bootstrap system "$PLIST_FILE"
     
     if [ $? -eq 0 ]; then
         print_status "Launch daemon loaded successfully"
