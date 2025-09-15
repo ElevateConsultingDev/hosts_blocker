@@ -1,30 +1,33 @@
-Test run started at Mon Sep 15 09:59:37 MDT 2025
-2025-09-15 09:59:37 - PASS: Configuration file exists
-2025-09-15 09:59:37 - PASS: Hosts file exists and readable
-2025-09-15 09:59:37 - PASS: LaunchDaemon service is running
-2025-09-15 09:59:37 - PASS: Hosts file contains blocking entries
-2025-09-15 09:59:37 - PASS: Hosts file has StevenBlack header
-2025-09-15 09:59:37 - PASS: Porn sites are blocked
-2025-09-15 09:59:37 - PASS: Social media sites are blocked
-2025-09-15 09:59:38 - PASS: Twitter is blocked
-2025-09-15 09:59:38 - PASS: Gambling sites are blocked
-2025-09-15 09:59:38 - PASS: Fake news sites are blocked
-2025-09-15 09:59:38 - PASS: Google is not blocked
-2025-09-15 09:59:38 - PASS: Backup files exist
-2025-09-15 09:59:38 - PASS: Logs directory exists
-2025-09-15 09:59:38 - PASS: Log files exist
-2025-09-15 09:59:38 - PASS: check-site.sh utility works
-2025-09-15 09:59:38 - PASS: Hosts file has sufficient entries
-2025-09-15 09:59:38 - PASS: DNS flush commands available
-2025-09-15 09:59:38 - PASS: Update script is executable
-2025-09-15 09:59:38 - PASS: Removal script is executable
-2025-09-15 09:59:38 - PASS: PornHub is blocked
-2025-09-15 09:59:38 - PASS: XVideos is blocked
-2025-09-15 09:59:38 - PASS: Instagram is blocked
-2025-09-15 09:59:38 - PASS: TikTok is blocked
-2025-09-15 09:59:38 - PASS: 888.com is blocked
-2025-09-15 09:59:39 - PASS: William Hill is blocked
-2025-09-15 09:59:39 - PASS: Hosts file has proper format
-2025-09-15 09:59:39 - PASS: Wikipedia is not blocked
-2025-09-15 09:59:39 - PASS: Stack Overflow is not blocked
-2025-09-15 09:59:39 - All tests passed
+Test run started at Mon Sep 15 10:33:29 MDT 2025
+2025-09-15 10:33:29 - PASS: Configuration file exists
+2025-09-15 10:33:29 - PASS: Hosts file exists and readable
+2025-09-15 10:33:29 - PASS: LaunchDaemon service is running
+2025-09-15 10:33:29 - PASS: Hosts file contains blocking entries
+2025-09-15 10:33:29 - PASS: Hosts file has StevenBlack header
+2025-09-15 10:33:29 - PASS: Porn sites are blocked
+2025-09-15 10:33:29 - PASS: Social media sites are blocked
+2025-09-15 10:33:29 - PASS: Twitter is blocked
+2025-09-15 10:33:29 - PASS: Gambling sites are blocked
+2025-09-15 10:33:30 - PASS: Fake news sites are blocked
+2025-09-15 10:33:30 - PASS: Google is not blocked
+2025-09-15 10:33:30 - PASS: Backup files exist
+2025-09-15 10:33:30 - PASS: Logs directory exists
+2025-09-15 10:33:30 - PASS: Log files exist
+2025-09-15 10:33:30 - PASS: check-site.sh utility works
+2025-09-15 10:33:30 - PASS: Hosts file has sufficient entries
+2025-09-15 10:33:30 - PASS: DNS flush commands available
+2025-09-15 10:33:30 - PASS: Update script is executable
+2025-09-15 10:33:30 - PASS: Removal script is executable
+2025-09-15 10:33:30 - PASS: PornHub is blocked
+2025-09-15 10:33:30 - PASS: XVideos is blocked
+2025-09-15 10:33:30 - PASS: Instagram is blocked
+2025-09-15 10:33:30 - PASS: TikTok is blocked
+2025-09-15 10:33:30 - PASS: 888.com is blocked
+2025-09-15 10:33:31 - PASS: William Hill is blocked
+2025-09-15 10:33:31 - PASS: Hosts file has proper format
+2025-09-15 10:33:31 - PASS: Wikipedia is not blocked
+2025-09-15 10:33:31 - PASS: Stack Overflow is not blocked
+2025-09-15 10:33:31 - PASS: Whitelisted domain linkedin.com loads
+2025-09-15 10:33:31 - PASS: Blocked site facebook.com fails to load
+2025-09-15 10:33:31 - PASS: Blocked site twitter.com fails to load
+2025-09-15 10:33:31 - All tests passed

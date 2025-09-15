@@ -196,23 +196,38 @@ apply_whitelist() {
     # Create temporary hosts file
     local temp_hosts=$(mktemp)
     
-    # Process hosts file
-    while IFS= read -r line; do
-        # Check if line blocks a whitelisted domain
-        local should_remove=false
-        for domain in $whitelist_domains; do
-            if echo "$line" | grep -q "0\.0\.0\.0 $domain$"; then
-                should_remove=true
-                print_status "Removing block for whitelisted domain: $domain"
-                break
-            fi
-        done
-        
-        # Add line if not blocking a whitelisted domain
-        if [ "$should_remove" = false ]; then
-            echo "$line" >> "$temp_hosts"
+    # Process hosts file more efficiently
+    local hosts_size=$(sudo wc -l < "$HOSTS_FILE")
+    print_info "Processing hosts file with $hosts_size lines (this may take a moment for large files)..."
+    
+    # Create a single grep pattern for all whitelisted domains and their subdomains
+    local grep_pattern=""
+    for domain in $whitelist_domains; do
+        if [ -n "$grep_pattern" ]; then
+            grep_pattern="$grep_pattern|"
         fi
-    done < "$HOSTS_FILE"
+        # Match exact domain and all subdomains
+        grep_pattern="$grep_pattern^0\.0\.0\.0 $domain$|^0\.0\.0\.0 [^ ]*\.$domain$"
+    done
+    
+    print_info "Using pattern: $grep_pattern"
+    
+    # Copy hosts file and remove all whitelisted domains in one pass
+    print_info "Copying hosts file..."
+    sudo cp "$HOSTS_FILE" "$temp_hosts"
+    
+    print_info "Removing whitelisted domains..."
+    local removed_count=$(grep -c -E "$grep_pattern" "$temp_hosts" 2>/dev/null || echo "0")
+    print_info "Found $removed_count lines to remove"
+    
+    if [ "$removed_count" -gt 0 ]; then
+        print_info "Removing whitelisted domains..."
+        grep -v -E "$grep_pattern" "$temp_hosts" > "${temp_hosts}.tmp"
+        mv "${temp_hosts}.tmp" "$temp_hosts"
+        print_info "Removed $removed_count blocked domains from whitelisted sites"
+    else
+        print_info "No whitelisted domains found in hosts file"
+    fi
     
     # Replace hosts file
     sudo mv "$temp_hosts" "$HOSTS_FILE"

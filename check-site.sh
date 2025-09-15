@@ -92,13 +92,12 @@ check_domain() {
         echo
     fi
     
-    # Check if domain is in hosts file
-    if grep -q "^0\.0\.0\.0.*$normalized_domain" /etc/hosts; then
+    if grep -q "^0\.0\.0\.0 $normalized_domain$" /etc/hosts; then
         print_blocked "Domain '$normalized_domain' is BLOCKED"
         
         if [ "$verbose" = "true" ]; then
             echo "Blocking entries found:"
-            grep "^0\.0\.0\.0.*$normalized_domain" /etc/hosts | while read line; do
+            grep "^0\.0\.0\.0 $normalized_domain$" /etc/hosts | while read line; do
                 echo "  $line"
             done
         fi

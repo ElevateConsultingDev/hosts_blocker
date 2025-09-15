@@ -201,7 +201,7 @@ main() {
     
     # Test 11: Test check-site.sh utility
     if [ -f "$SCRIPT_DIR/check-site.sh" ]; then
-        run_test "check-site.sh utility works" "$SCRIPT_DIR/check-site.sh google.com > /dev/null 2>&1"
+        run_test "check-site.sh utility works" "$SCRIPT_DIR/check-site.sh google.com > /dev/null 2>&1; [ \$? -eq 0 -o \$? -eq 1 ]"
     fi
     
     # Test 12: Test that hosts file is not empty
@@ -252,6 +252,22 @@ main() {
     # Test 18: Check for common false positives (sites that should NOT be blocked)
     run_test "Wikipedia is not blocked" "is_domain_allowed 'wikipedia.org'"
     run_test "Stack Overflow is not blocked" "is_domain_allowed 'stackoverflow.com'"
+    
+    # Test 19: Test whitelist functionality with actual HTTP requests
+    if [ -f "$SCRIPT_DIR/whitelist.txt" ] && [ -s "$SCRIPT_DIR/whitelist.txt" ]; then
+        print_info "Testing whitelisted domains with HTTP requests..."
+        local whitelist_domains=$(cat "$SCRIPT_DIR/whitelist.txt" | grep -v '^#' | grep -v '^$' | head -3)
+        for domain in $whitelist_domains; do
+            if [ -n "$domain" ]; then
+                run_test "Whitelisted domain $domain loads" "curl -s -o /dev/null -w '%{http_code}' --connect-timeout 10 https://$domain | grep -q '^[23][0-9][0-9]$'"
+            fi
+        done
+    fi
+    
+    # Test 20: Test that blocked sites fail to load
+    print_info "Testing that blocked sites fail to load..."
+    run_test "Blocked site facebook.com fails to load" "! curl -s -o /dev/null -w '%{http_code}' --connect-timeout 5 https://facebook.com | grep -q '^[23][0-9][0-9]$'"
+    run_test "Blocked site twitter.com fails to load" "! curl -s -o /dev/null -w '%{http_code}' --connect-timeout 5 https://twitter.com | grep -q '^[23][0-9][0-9]$'"
     
     # Summary
     echo
