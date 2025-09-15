@@ -163,41 +163,6 @@ detect_browser() {
 
 # Function to get user's category selection
 get_category_selection() {
-    echo "Select categories to block (enter letters, e.g., 'psg' for porn+social+gambling):"
-    echo "Example: psg (porn + social + gambling)"
-    echo "         a (all categories)"
-    echo "         d (default - malware and ads only)"
-    echo
-    
-    # Detect browser and check history for potential conflicts
-    echo
-    print_status "Checking browser history for potential conflicts..."
-    echo "========================================================"
-    
-    # Try to detect browser with timeout
-    local browser_info=""
-    if command -v sqlite3 >/dev/null 2>&1; then
-        # Use timeout to prevent hanging
-        browser_info=$(timeout 10 detect_browser 2>/dev/null || echo "")
-    fi
-    
-    if [ -n "$browser_info" ]; then
-        local browser_name=$(echo "$browser_info" | cut -d'|' -f1)
-        local browser_path=$(echo "$browser_info" | cut -d'|' -f2)
-        
-        print_status "Found $browser_name browser, checking history..."
-        
-        # Run history check with specific browser and timeout
-        if [ -f "$SCRIPT_DIR/simple-history-check.sh" ]; then
-            timeout 30 BROWSER_PATH="$browser_path" "$SCRIPT_DIR/simple-history-check.sh" 2>/dev/null || true
-        fi
-    else
-        print_status "No browser detected or history check unavailable"
-        print_status "You can run the history check later with: ./bin/simple-history-check.sh"
-    fi
-    echo
-    echo "Now select your categories:"
-    
     read -p "Categories: " -r choice
     
     # Convert single letters to full category names
@@ -205,10 +170,8 @@ get_category_selection() {
     
     if [ -z "$choice" ] || [ "$choice" = "d" ]; then
         selected_categories=""
-        print_status "Using base hosts file (includes malware and ads by default)"
     elif [ "$choice" = "a" ]; then
         selected_categories="porn social gambling fakenews"
-        print_status "Selected all categories: $selected_categories"
     else
         # Parse individual letters
         for (( i=0; i<${#choice}; i++ )); do
@@ -236,37 +199,10 @@ get_category_selection() {
         
         # Remove leading space
         selected_categories="${selected_categories# }"
-        print_status "Selected categories: $selected_categories"
     fi
     
-    # Check what would be blocked with these categories
-    if [ -n "$selected_categories" ] && [ -f "$SCRIPT_DIR/simple-history-check.sh" ]; then
-        echo
-        print_status "Checking what would be blocked with your selection..."
-        
-        # Run the history check and capture output
-        local history_output=$(mktemp)
-        "$SCRIPT_DIR/simple-history-check.sh" "$selected_categories" > "$history_output" 2>&1
-        
-        # Show the analysis
-        cat "$history_output"
-        
-        # Check if there are conflicts
-        if grep -q "would be blocked" "$history_output"; then
-            echo
-            print_warning "⚠️  Some of your frequently visited sites would be blocked!"
-            echo
-            echo "Would you like to add any sites to the whitelist now? (y/n)"
-            read -p "Add exceptions: " -r add_exceptions
-            
-            if [[ $add_exceptions =~ ^[Yy]$ ]]; then
-                add_exceptions_interactive "$selected_categories"
-            fi
-        fi
-        
-        rm "$history_output"
-        echo
-    fi
+    # Return the selected categories
+    echo "$selected_categories"
 }
 
 # Function to add exceptions interactively
@@ -370,6 +306,7 @@ EOF
 
 # Function to create configuration file
 create_config() {
+    local selected_categories="$1"
     print_status "Creating configuration file..."
     
     cat > "$CONFIG_FILE" << EOF
@@ -495,8 +432,17 @@ main() {
     check_macos
     check_dependencies
     show_categories
-    get_category_selection
-    create_config
+    
+    echo "Select categories to block (enter letters, e.g., 'psg' for porn+social+gambling):"
+    echo "Example: psg (porn + social + gambling)"
+    echo "         a (all categories)"
+    echo "         d (default - malware and ads only)"
+    echo
+    
+    # Get category selection
+    local selected_categories=$(get_category_selection)
+    
+    create_config "$selected_categories"
     create_plist
     load_launch_agent
     test_setup

@@ -5,10 +5,11 @@
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOG_DIR="$SCRIPT_DIR/logs"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+LOG_DIR="$PROJECT_ROOT/logs"
 LOG_FILE="$LOG_DIR/update-hosts.log"
 ERR_FILE="$LOG_DIR/update-hosts.err"
-CONFIG_FILE="$SCRIPT_DIR/hosts-config.txt"
+CONFIG_FILE="$PROJECT_ROOT/hosts-config.txt"
 
 # Create logs directory if it doesn't exist
 mkdir -p "$LOG_DIR"

@@ -98,7 +98,9 @@ show_top_sites() {
     
     # Process each line
     while IFS='|' read -r url title visit_count; do
-        if [ -n "$url" ] && [ -n "$visit_count" ] && [ "$visit_count" -gt 0 ]; then
+        # Clean visit_count to only contain numbers
+        visit_count=$(echo "$visit_count" | tr -d '[:alpha:][:space:][:punct:]' | head -c 10)
+        if [ -n "$url" ] && [ -n "$visit_count" ] && [ "$visit_count" -gt 0 ] 2>/dev/null; then
             local domain=$(extract_domain "$url")
             if [ -n "$domain" ] && [ "$domain" != "localhost" ] && [ "$domain" != "127.0.0.1" ]; then
                 echo "$domain|$visit_count|$title" >> "$temp_domains"
