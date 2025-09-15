@@ -1,1 +1,16 @@
 linkedin.com
+static.licdn.com
+media.licdn.com
+www.linkedin.com
+dms-akam.licdn.com
+dms.licdn.com
+media-akam.licdn.com
+media-ecst.licdn.com
+media-exp1.licdn.com
+media-exp3.licdn.com
+static-akam.licdn.com
+static-azur.licdn.com
+static-ecst.licdn.com
+static-od.licdn.com
+www.licdn.com
+snap.licdn.com
